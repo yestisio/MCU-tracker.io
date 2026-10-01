@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MCU Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef0f6;--card:#fff;--ink:#16193a;--mute:#6b7090;--line:#d9dcea;--acc:#d3202f;--ok:#1f7a4d;--okbg:#e3f3ea;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12142b;--card:#1b1e3d;--ink:#eceefb;--mute:#9a9fc4;--line:#2d3160;--acc:#ff4a57;--ok:#5fd697;--okbg:#17352b}}
+:root[data-theme="dark"]{--bg:#12142b;--card:#1b1e3d;--ink:#eceefb;--mute:#9a9fc4;--line:#2d3160;--acc:#ff4a57;--ok:#5fd697;--okbg:#17352b}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:640px;margin:0 auto;padding:20px 16px 48px}
+h1{font:400 40px/1 Anton,Impact,"Arial Narrow",sans-serif;letter-spacing:.5px;margin:8px 0 14px}
+.prog{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px}
+.nums{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.big{font:400 30px/1 Anton,Impact,sans-serif}
+.bar{height:10px;border-radius:5px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--acc);transition:width .35s}
+.next{margin-top:12px;font-size:14px;color:var(--mute)}
+.next b{color:var(--ink)}
+h2{font-size:15px;margin:26px 0 8px;display:flex;justify-content:space-between;font-weight:700}
+h2 span{color:var(--mute);font-weight:400}
+ul{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+li+li{border-top:1px solid var(--line)}
+button.row{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;cursor:pointer}
+button.row:focus-visible{outline:2px solid var(--acc);outline-offset:-2px}
+.chk{flex:none;width:24px;height:24px;border-radius:50%;border:2px solid var(--mute);display:grid;place-items:center;color:transparent;font-size:14px;font-weight:700}
+.done .chk{background:var(--ok);border-color:var(--ok);color:#fff}
+.n{flex:none;width:26px;text-align:right;color:var(--mute);font-size:13px;font-variant-numeric:tabular-nums}
+.t{flex:1;min-width:0}
+.tag{flex:none;font-size:12px;color:var(--mute);border:1px solid var(--line);border-radius:6px;padding:1px 7px}
+.tag.new{color:var(--acc);border-color:var(--acc)}
+.done .t{color:var(--mute)}
+.empty{padding:16px;color:var(--mute);font-size:14px}
+.reset{all:unset;cursor:pointer;display:block;margin:22px auto 0;color:var(--mute);font-size:13px;text-decoration:underline}
+</style>
+</head>
+<body>
+<main>
+<h1>MCU Tracker</h1>
+<div class="prog">
+  <div class="nums"><span class="big" id="pct">0%</span><span id="cnt" style="color:var(--mute)"></span></div>
+  <div class="bar"><i id="fill"></i></div>
+  <div class="next" id="next"></div>
+</div>
+<h2>Sudah ditonton <span id="c1"></span></h2><ul id="done"></ul>
+<h2>Harus ditonton <span id="c2"></span></h2><ul id="todo"></ul>
+<div id="sync" style="text-align:center;color:var(--mute);font-size:13px;margin-top:18px"></div>
+<button class="reset" id="reset" style="margin-top:8px">Kembalikan ke awal</button>
+</main>
+<script>
+const D=[["Eyes of Wakanda","Serial"],["Captain America: The First Avenger","Film"],["One Shot: Agent Carter","One-shot"],["Captain Marvel","Film"],["Iron Man","Film"],["Iron Man 2","Film"],["The Incredible Hulk","Film"],["One Shot: A Funny Thing Happened on the Way to Thor's Hammer","One-shot"],["Thor","Film"],["One Shot: The Consultant","One-shot"],["The Avengers","Film"],["One Shot: Item 47","One-shot"],["Thor: The Dark World","Film"],["Iron Man 3","Film"],["One Shot: All Hail the King","One-shot"],["Captain America: The Winter Soldier","Film"],["Guardians of the Galaxy","Film"],["Guardians of the Galaxy Vol. 2","Film"],["I Am Groot S1","Serial"],["I Am Groot S2","Serial"],["Daredevil S1","Serial"],["Jessica Jones S1","Serial"],["Avengers: Age of Ultron","Film"],["Ant-Man","Film"],["Daredevil S2","Serial"],["Luke Cage S1","Serial"],["Iron Fist S1","Serial"],["The Defenders","Serial"],["Captain America: Civil War","Film"],["Black Widow","Film"],["Black Panther","Film"],["Spider-Man: Homecoming","Film"],["The Punisher S1","Serial"],["Doctor Strange","Film"],["Jessica Jones S2","Serial"],["Luke Cage S2","Serial"],["Iron Fist S2","Serial"],["Daredevil S3","Serial"],["Thor: Ragnarok","Film"],["The Punisher S2","Serial"],["Jessica Jones S3","Serial"],["Ant-Man and the Wasp","Film"],["Avengers: Infinity War","Film"],["Avengers: Endgame","Film"],["Loki S1","Serial"],["What If…? S1","Serial"],["Marvel Zombies","Serial"],["WandaVision","Serial"],["Shang-Chi and the Legend of the Ten Rings","Film"],["The Falcon and the Winter Soldier","Serial"],["Spider-Man: Far From Home","Film"],["Eternals","Film"],["Spider-Man: No Way Home","Film"],["Doctor Strange in the Multiverse of Madness","Film"],["Hawkeye","Serial"],["Moon Knight","Serial"],["Black Panther: Wakanda Forever","Film"],["Echo","Serial"],["She-Hulk: Attorney at Law","Serial"],["Ms. Marvel","Serial"],["Thor: Love and Thunder","Film"],["Ironheart","Serial"],["Werewolf By Night","Special"],["The Guardians of the Galaxy Holiday Special","Special"],["Ant-Man and the Wasp: Quantumania","Film"],["Guardians of the Galaxy Vol. 3","Film"],["Secret Invasion","Serial"],["The Marvels","Film"],["Loki S2","Serial"],["What If…? S2","Serial"],["Deadpool & Wolverine","Film"],["Agatha All Along","Serial"],["What If…? S3","Serial"],["Daredevil: Born Again S1","Serial"],["Captain America: Brave New World","Film"],["Thunderbolts*","Film"],["The Fantastic Four: First Steps","Film"],["Wonder Man","Serial"],["Daredevil: Born Again S2","Serial"],["The Punisher: One Last Kill","Special"],["Spider-Man: Brand New Day","Film","new"],["VisionQuest","Serial","new"],["Avengers: Doomsday","Film","new"]];
+const W0=["Avengers: Age of Ultron","Black Panther","WandaVision","Eternals","Spider-Man: No Way Home","Doctor Strange in the Multiverse of Madness","Agatha All Along","The Fantastic Four: First Steps"];
+const KEY="mcu-tracker-watched-v1";
+let S;
+try{const r=localStorage.getItem(KEY);S=new Set(r?JSON.parse(r):W0)}catch(e){S=new Set(W0)}
+const API_URL="https://script.google.com/macros/s/AKfycbzl9AEuBKtsw7IkGcNFZd-NOR3Us2EM9J4tA-YNMk6HtPwQf-jxAJQ7Mm8c-LuhQ7xUTg/exec";   // tempel URL web app Apps Script (berakhiran /exec). Kosong = hanya simpan di browser
+const TOKEN="";     // opsional, harus sama dengan TOKEN di Code.gs
+function status(t){document.getElementById("sync").textContent=t}
+let timer;
+function save(){
+  try{localStorage.setItem(KEY,JSON.stringify([...S]))}catch(e){}
+  if(!API_URL){status("Tersimpan di perangkat ini");return}
+  clearTimeout(timer);timer=setTimeout(push,600);
+}
+async function push(){
+  status("Menyimpan…");
+  try{
+    await fetch(API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({token:TOKEN,w:[...S]})});
+    status("Tersimpan");
+  }catch(e){status("Gagal sinkron, tersimpan di perangkat ini")}
+}
+async function pull(){
+  if(!API_URL){status("Tersimpan di perangkat ini");return}
+  try{
+    const r=await fetch(API_URL+"?token="+encodeURIComponent(TOKEN)),j=await r.json();
+    if(Array.isArray(j.w)){S=new Set(j.w);try{localStorage.setItem(KEY,JSON.stringify(j.w))}catch(e){}render();status("Tersimpan")}
+    else push();
+  }catch(e){status("Offline, memakai data perangkat ini")}
+}
+function row(d,i){
+  const li=document.createElement("li"),b=document.createElement("button");
+  b.className="row"+(S.has(d[0])?" done":"");
+  b.setAttribute("aria-pressed",S.has(d[0]));
+  b.innerHTML='<span class="chk">✓</span><span class="n">'+(i+1)+'</span><span class="t"></span><span class="tag'+(d[2]?' new':'')+'">'+(d[2]?'Baru':d[1])+'</span>';
+  b.querySelector(".t").textContent=d[0];
+  b.onclick=()=>{S.has(d[0])?S.delete(d[0]):S.add(d[0]);save();render()};
+  li.appendChild(b);return li;
+}
+function render(){
+  const done=document.getElementById("done"),todo=document.getElementById("todo");
+  done.innerHTML="";todo.innerHTML="";
+  let nd=0,first=null;
+  D.forEach((d,i)=>{
+    if(S.has(d[0])){done.appendChild(row(d,i));nd++}
+    else{todo.appendChild(row(d,i));if(!first)first=d[0]}
+  });
+  const n=D.length,p=Math.round(nd/n*100);
+  if(!nd)done.innerHTML='<li class="empty">Belum ada. Ketuk judul di bawah setelah selesai menonton.</li>';
+  if(nd==n)todo.innerHTML='<li class="empty">Semua sudah ditonton.</li>';
+  document.getElementById("pct").textContent=p+"%";
+  document.getElementById("cnt").textContent=nd+" dari "+n+" judul";
+  document.getElementById("fill").style.width=p+"%";
+  document.getElementById("c1").textContent=nd;
+  document.getElementById("c2").textContent=n-nd;
+  const nx=document.getElementById("next");
+  nx.innerHTML=first?"Tonton berikutnya: <b></b>":"Selesai!";
+  if(first)nx.querySelector("b").textContent=first;
+}
+document.getElementById("reset").onclick=()=>{if(confirm("Kembalikan ke daftar awal (8 judul sudah ditonton)?")){S=new Set(W0);save();render()}};
+render();pull();
+</script>
+</body>
+</html>
